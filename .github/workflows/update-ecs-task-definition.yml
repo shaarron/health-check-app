@@ -1,0 +1,91 @@
+name: Reusable - Update task definition
+
+on:
+  workflow_call:
+    inputs:
+      terraform-backend-bucket:
+        description: 'Terraform state backend bucket'
+        required: true
+        type: string
+      working-dir:
+        required: true
+        type: string
+      aws-region:
+        required: true
+        type: string
+      state-key:
+        description: 'Terraform state backend bucket state key path'
+        type: string
+        required: true
+      image:
+        type: string
+        required: true
+    secrets:
+      aws-access-key-id:
+        required: true
+      aws-secret-access-key:
+        required: true
+
+jobs:
+  update-ecs-task-definition:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.6.0
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.aws-access-key-id }}
+          aws-secret-access-key: ${{ secrets.aws-secret-access-key }}
+          aws-region: ${{ inputs.aws-region }}
+
+      - name: Terraform Init
+        working-directory: ${{ inputs.working-dir }}
+        run: |
+          terraform init  \
+            -backend-config="bucket=${{ inputs.terraform-backend-bucket }}" \
+            -backend-config="key=${{ inputs.state-key }}" \
+            -backend-config="region=${{ inputs.aws-region }}" \
+            -backend-config="dynamodb_table=health-check-terraform-lock" \
+            -backend-config="encrypt=true"
+
+      - name: Get Task Definition Name
+        working-directory: ${{ inputs.working-dir }}
+        run: | 
+             echo "task_name=$(terraform output -raw task_name)" >> $GITHUB_ENV
+             echo "cluster_name=$(terraform output -raw cluster_name)" >> $GITHUB_ENV
+             echo "service_name=$(terraform output -raw service_name)" >> $GITHUB_ENV
+             echo "container_name=$(terraform output -raw container_name)" >> $GITHUB_ENV
+
+      - name: Download task definition
+        run: |
+          aws ecs describe-task-definition --task-definition ${{ env.task_name }} \
+          --query taskDefinition > task-definition.json
+
+      - name: Clean Task Definition
+        run: |
+          jq 'del(.taskDefinitionArn, .compatibilities, .requiresAttributes, .revision, .status, .registeredAt, .registeredBy)' task-definition.json > cleaned-task-definition.json
+
+      - name: Render Amazon ECS task definition
+        id: render-backend-container
+        uses: aws-actions/amazon-ecs-render-task-definition@v1.6.2
+        with:
+          task-definition: cleaned-task-definition.json
+          container-name: ${{ env.container_name }}
+          image: ${{ inputs.image }}
+
+      - name: Deploy to Amazon ECS service
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v2.3.0
+        with:
+          task-definition: ${{ steps.render-backend-container.outputs.task-definition }}
+          service: ${{ env.service_name }}
+          cluster: ${{ env.cluster_name }}
+          wait-for-service-stability: true
+

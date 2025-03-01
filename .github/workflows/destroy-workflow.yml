@@ -1,0 +1,87 @@
+name: Terraform destroy
+
+on:
+  workflow_dispatch:
+
+jobs:
+  terraform-destroy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.6.0
+
+      - name: Terraform Init api
+        working-directory: ./api/terraform
+        run: |
+          terraform init \
+            -backend-config="bucket=${{ vars.BACKEND_BUCKET }}" \
+            -backend-config="key=api/terraform.tfstate" \
+            -backend-config="region=${{ vars.AWS_REGION }}" \
+            -backend-config="dynamodb_table=terraform-state-locking" \
+            -backend-config="encrypt=true"
+
+      - name: Terraform Destroy
+        working-directory: ./api/terraform
+        env:
+          TF_VAR_aws-region: ${{ vars.AWS_REGION }}
+          TF_VAR_image: ''
+        run: terraform destroy -auto-approve -lock=false
+
+
+      - name: Empty the frontend S3 bucket
+        run: |
+          BUCKET_NAME=${{ vars.FRONTEND_BUCKET }}
+          echo "Deleting all objects from $BUCKET_NAME..."
+          aws s3 rm s3://$BUCKET_NAME --recursive
+        continue-on-error: true
+
+      - name: Terraform Init frontend
+        working-directory: ./frontend/terraform
+        run: |
+          terraform init \
+          -backend-config="bucket=${{ vars.BACKEND_BUCKET }}" \
+          -backend-config="key=frontend/terraform.tfstate" \
+          -backend-config="region=${{ vars.AWS_REGION }}" \
+          -backend-config="dynamodb_table=terraform-state-locking" \
+          -backend-config="encrypt=true"
+
+      - name: Terraform Destroy frontend
+        working-directory: ./frontend/terraform
+        run: terraform destroy -auto-approve -lock=false
+        env:
+          TF_VAR_aws-region: ${{ vars.AWS_REGION }}
+          TF_VAR_image: ""
+          TF_VAR_frontend-bucket: ${{ vars.FRONTEND_BUCKET }}
+
+      - name: Empty the backend S3 bucket
+        run: |
+          BUCKET_NAME="${{ vars.BACKEND_BUCKET }}"
+          echo "Deleting all objects from $BUCKET_NAME..."
+          aws s3 rm s3://$BUCKET_NAME --recursive
+        continue-on-error: true
+
+      - name: Delete the dynamodb table
+        run: |
+          TABLE_NAME="health-check-terraform-lock"
+          echo "Deleting $TABLE_NAME..."
+          aws dynamodb delete-table --table-name $TABLE_NAME
+          aws dynamodb wait table-not-exists --table-name $TABLE_NAME
+
+      - name: Delete the backend S3 bucket
+        run: |
+          BUCKET_NAME="${{ vars.BACKEND_BUCKET }}"
+          echo "Deleting bucket $BUCKET_NAME..."
+          aws s3 rb s3://$BUCKET_NAME --force

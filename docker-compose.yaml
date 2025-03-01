@@ -1,0 +1,22 @@
+services:
+  api:
+    build:
+      context: ./api/src
+      dockerfile: Dockerfile
+    container_name: backend
+    environment:
+      - PORT=5555
+    ports:
+      - "5555:5555"
+
+  frontend:
+    build:
+      context: ./frontend/src
+      dockerfile: Dockerfile
+    container_name: frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:5555
+    depends_on:
+      - api

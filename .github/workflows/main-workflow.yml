@@ -1,0 +1,109 @@
+name: Main Workflow
+
+on:
+  workflow_dispatch:
+
+    inputs:
+      force-unlock:
+        description: 'force unlock?'
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  bump-version-tag:
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+    outputs:
+      new_tag: ${{ steps.version.outputs.new_tag }}
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: '0'
+      - name: Bump version and push tag
+        id: version
+        uses: anothrNick/github-tag-action@1.64.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          WITH_V: true
+
+  build-push-api-image:
+    uses: ./.github/workflows/build-and-push-ghcr.yml
+    needs: [bump-version-tag]
+    with:
+      working-dir: './api/src'
+      image: 'ghcr.io/${{ github.repository }}/health-check-api'
+      tag: ${{ needs.bump-version-tag.outputs.new_tag }}
+    secrets:
+      github-token: ${{ secrets.GITHUB_TOKEN }}
+
+  build-push-frontend-image:
+    uses: ./.github/workflows/build-and-push-ghcr.yml
+    needs: [bump-version-tag]
+    with:
+      working-dir: './frontend/src'
+      image: 'ghcr.io/${{ github.repository }}/health-check-frontend'
+      tag: ${{ needs.bump-version-tag.outputs.new_tag }}
+    secrets:
+      github-token: ${{ secrets.GITHUB_TOKEN }}
+
+  deploy-api-aws-resources:
+    uses: ./.github/workflows/terraform-aws-setup.yml
+    needs: [ build-push-api-image ]
+    with:
+      state-key: 'api/terraform.tfstate'
+      working-dir: './api/terraform'
+      requested-output: 'load_balancer_url'
+      terraform-backend-bucket: ${{ vars.BACKEND_BUCKET }}
+      aws-region: ${{ vars.AWS_REGION }}
+      force-unlock: ${{ inputs.force-unlock }}
+      image: ${{ needs.build-push-api-image.outputs.deployed-image }}
+    secrets:
+      aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+  deploy-frontend-aws-resources:
+    uses: ./.github/workflows/terraform-aws-setup.yml
+    needs: [ build-push-api-image ]
+    with:
+      state-key: 'frontend/terraform.tfstate'
+      working-dir: './frontend/terraform'
+      terraform-backend-bucket: ${{ vars.BACKEND_BUCKET }}
+      aws-region: ${{ vars.AWS_REGION }}
+      frontend-bucket: ${{ vars.FRONTEND_BUCKET }}
+      force-unlock: ${{ inputs.force-unlock }}
+    secrets:
+      aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+  deploy-frontend-app:
+    uses: ./.github/workflows/deploy-frontend-app.yml
+    needs: [deploy-api-aws-resources, deploy-frontend-aws-resources]
+    with:
+      state-key: 'frontend/terraform.tfstate'
+      working-dir: './frontend'
+      aws-region: ${{ vars.AWS_REGION }}
+      frontend-bucket: ${{ vars.FRONTEND_BUCKET }}
+      api-url: ${{ needs.deploy-api-aws-resources.outputs.extracted-value }}
+      terraform-backend-bucket: ${{ vars.BACKEND_BUCKET }}
+    secrets:
+      aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+  update-api-ecs-task:
+    uses: ./.github/workflows/update-ecs-task-definition.yml
+    needs: [build-push-api-image, deploy-api-aws-resources, deploy-frontend-aws-resources]
+    with:
+      state-key: 'api/terraform.tfstate'
+      working-dir: './api/terraform'
+      aws-region: ${{ vars.AWS_REGION }}
+      terraform-backend-bucket: ${{ vars.BACKEND_BUCKET }}
+      image: ${{ needs.build-push-api-image.outputs.deployed-image }}
+    secrets:
+      aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+

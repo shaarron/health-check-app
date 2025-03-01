@@ -1,0 +1,123 @@
+name: Reusable - Terraform AWS setup deploy
+
+on:
+  workflow_call:
+    inputs:
+      terraform-backend-bucket:
+        description: 'Terraform state backend bucket'
+        required: true
+        type: string
+      working-dir:
+        required: true
+        type: string
+      aws-region:
+        required: true
+        type: string
+      state-key:
+        description: 'Terraform state backend bucket state key path'
+        type: string
+      image:
+        type: string
+        default: ''
+      force-unlock:
+        type: boolean
+        description: 'force unlock?'
+        default: false
+      frontend-bucket:
+        description: 'Frontend bucket name - for frontend deploy only'
+        type: string
+      skip-backend-config:
+        description: 'Skip backend configuration during terraform init'
+        type: boolean
+        default: false
+      requested-output:
+        description: 'request output by passing the '
+        type: string
+        default: ''
+    secrets:
+      aws-access-key-id:
+        required: true
+      aws-secret-access-key:
+        required: true
+
+    outputs:
+      extracted-value:
+        value: ${{ jobs.terraform-aws-setup-deploy.outputs.extracted-value }}
+
+jobs:
+  terraform-aws-setup-deploy:
+    outputs:
+      extracted-value: ${{ steps.extract_output.outputs.extracted-value }}
+    runs-on: ubuntu-latest
+    env:
+      TF_VAR_image: ${{ inputs.image }}
+      TF_VAR_aws-region: ${{ inputs.aws-region }}
+      TF_VAR_terraform-backend-bucket: ${{ inputs.terraform-backend-bucket }}
+      TF_VAR_frontend-bucket: ${{ inputs.frontend-bucket }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.6.0
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.aws-access-key-id }}
+          aws-secret-access-key: ${{ secrets.aws-secret-access-key }}
+          aws-region: ${{ inputs.aws-region }}
+
+      - name:  Terraform init
+        working-directory: ${{ inputs.working-dir }}
+        run: |
+          if [ "${{ inputs.skip-backend-config }}" = "true" ]; then
+            terraform init 
+          else
+          terraform init \
+            -backend-config="bucket=${{ inputs.terraform-backend-bucket }}" \
+            -backend-config="key=${{ inputs.state-key }}" \
+            -backend-config="region=${{ inputs.aws-region }}" \
+            -backend-config="dynamodb_table=health-check-terraform-lock" \
+            -backend-config="encrypt=true"
+          fi
+
+      - name: Terraform Validate
+        working-directory: ${{ inputs.working-dir }}
+        run: terraform validate
+
+      - name: Terraform Format Check
+        working-directory: ${{ inputs.working-dir }}
+        run: terraform fmt -check -diff || (echo "Terraform files are not formatted correctly!" && exit 1)
+
+      - name: Terraform Plan
+        working-directory: ${{ inputs.working-dir }}
+        env:
+          aws-region: ${{ inputs.aws-region }}
+        run: |
+          if [ "${{ inputs.use-lock }}" = "true" ]; then
+            terraform plan -out=tfplan
+          else
+            terraform plan -out=tfplan -lock=false
+          fi
+
+      - name: Apply Terraform Configuration
+        working-directory: ${{ inputs.working-dir }}
+        run: |
+          if [ "${{ inputs.force-unlock }}" = "true" ]; then
+            terraform apply -auto-approve -lock=false
+          else
+            terraform apply -auto-approve
+          fi
+
+      - name: Extract output
+        id: extract_output
+        working-directory: ${{ inputs.working-dir }}
+        if: ${{ inputs.requested-output != '' }}
+        run: |
+          value=$(terraform output -raw ${{ inputs.requested-output }})
+          echo "Extracted value: $value"  # Debugging output
+          echo "extracted-value=$value" >> $GITHUB_OUTPUT

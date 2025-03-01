@@ -1,0 +1,16 @@
+name: Bootstrap Terraform Backend
+
+on:
+  workflow_dispatch:
+
+jobs:
+  call-deploy-terraform-backend:
+    uses: ./.github/workflows/terraform-aws-setup.yml
+    with:
+      working-dir: './terraform-bootstrap'
+      terraform-backend-bucket: '${{ vars.BACKEND_BUCKET }}'
+      aws-region: ${{ vars.AWS_REGION }}
+      skip-backend-config: true
+    secrets:
+      aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}

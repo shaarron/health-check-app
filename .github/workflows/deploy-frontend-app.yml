@@ -1,0 +1,94 @@
+name: Reusable - Build and push frontend
+
+on:
+  workflow_call:
+    inputs:
+      working-dir:
+        type: string
+        required: true
+      terraform-backend-bucket:
+        type: string
+        required: true
+      frontend-bucket:
+        type: string
+        required: true
+      aws-region:
+        type: string
+        required: true
+      api-url:
+        type: string
+        required: true
+      state-key:
+        type: string
+        required: true
+    secrets:
+      aws-access-key-id:
+        required: true
+      aws-secret-access-key:
+        required: true
+
+jobs:
+  frontend-build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.6.0
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.aws-access-key-id }}
+          aws-secret-access-key: ${{ secrets.aws-secret-access-key }}
+          aws-region: ${{ inputs.aws-region }}
+
+      - name: Terraform init
+        working-directory: ${{ inputs.working-dir }}/terraform
+        run: |
+          terraform init \
+            -backend-config="bucket=${{ inputs.terraform-backend-bucket }}" \
+            -backend-config="key=${{ inputs.state-key }}" \
+            -backend-config="region=${{ inputs.aws-region }}" \
+            -backend-config="dynamodb_table=health-check-terraform-lock" \
+            -backend-config="encrypt=true"
+
+      - name: Create `.env` File with Load Balancer URL
+        working-directory: ${{ inputs.working-dir }}/src
+        run: |
+          echo "NEXT_PUBLIC_API_URL=http://${{ inputs.api-url }}" > .env.local
+          cat .env.local
+
+      - name: npm install
+        working-directory: ${{ inputs.working-dir }}/src
+        run: npm install
+
+      - name: Run Build
+        working-directory: ${{ inputs.working-dir }}/src
+        run: npm run build
+
+      - name: Get CloudFront Distribution ID from Terraform
+        working-directory: ${{ inputs.working-dir }}/terraform
+        run: |
+          echo "Fetching CloudFront Distribution ID from Terraform..."
+          DISTRIBUTION_ID=$(terraform output -raw cloudfront_distribution_id 2>/dev/null)
+          echo "::add-mask::$DISTRIBUTION_ID"
+          echo "DISTRIBUTION_ID=$DISTRIBUTION_ID" >> $GITHUB_ENV
+          echo "CloudFront Distribution ID: $DISTRIBUTION_ID"
+
+      - name: Upload Web App to S3
+        working-directory: ${{ inputs.working-dir }}/src
+        run: |
+          echo "Uploading files to S3..."
+          aws s3 cp --recursive out/ s3://${{ inputs.frontend-bucket }}/
+
+      - name: Invalidate CloudFront Cache
+        run: |          
+          echo "Invalidating CloudFront cache..."
+          aws cloudfront create-invalidation \
+            --distribution-id $DISTRIBUTION_ID \
+            --paths "/*"
+
