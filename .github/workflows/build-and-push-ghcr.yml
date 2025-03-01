@@ -43,6 +43,10 @@ jobs:
         id: lowercase_image
         run: echo "lc_image=$(echo '${{ inputs.image }}' | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_OUTPUT"
 
+      - name: Run Tests
+        working-directory: ${{ inputs.working-dir }}
+        run: npm run test
+
       - name: Build Docker image
         working-directory: ${{ inputs.working-dir }}
         run: |
