@@ -68,15 +68,15 @@ health-check-app/
 
 The project requires an **IAM account** with specific [permissions](#2-required-iam-permissions) to deploy infrastructure and manage the Terraform state. The following secrets and variables must be set in the GitHub repository settings:
 
-Secrets:
+**Secrets:**
 
 | Secret Name               | Description |
 |---------------------------|-------------|
 | `AWS_ACCESS_KEY_ID`       | IAM access key for Terraform and CI/CD operations |
 | `AWS_SECRET_ACCESS_KEY`   | IAM secret key for Terraform and CI/CD operations |
 
---------
-Variables:
+
+**Variables:**
 
 | Variable Name              | Description                                     |
 |----------------------------|-------------------------------------------------|

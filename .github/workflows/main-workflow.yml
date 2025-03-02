@@ -17,6 +17,7 @@ permissions:
 
 jobs:
   bump-version-tag:
+    if: "!contains(github.event.head_commit.message, 'ci skip')"
     runs-on: ubuntu-22.04
     permissions:
       contents: write
@@ -34,6 +35,7 @@ jobs:
           WITH_V: true
 
   build-push-api-image:
+    if: "!contains(github.event.head_commit.message, 'ci skip')"
     uses: ./.github/workflows/build-and-push-ghcr.yml
     needs: [bump-version-tag]
     with:
@@ -44,6 +46,7 @@ jobs:
       github-token: ${{ secrets.GITHUB_TOKEN }}
 
   build-push-frontend-image:
+    if: "!contains(github.event.head_commit.message, 'ci skip')"
     uses: ./.github/workflows/build-and-push-ghcr.yml
     needs: [bump-version-tag]
     with:
@@ -54,6 +57,7 @@ jobs:
       github-token: ${{ secrets.GITHUB_TOKEN }}
 
   deploy-api-aws-resources:
+    if: "!contains(github.event.head_commit.message, 'ci skip')"
     uses: ./.github/workflows/terraform-aws-setup.yml
     needs: [ build-push-api-image ]
     with:
@@ -69,6 +73,7 @@ jobs:
       aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
   deploy-frontend-aws-resources:
+    if: "!contains(github.event.head_commit.message, 'ci skip')"
     uses: ./.github/workflows/terraform-aws-setup.yml
     needs: [ build-push-api-image ]
     with:
@@ -83,6 +88,7 @@ jobs:
       aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
   deploy-frontend-app:
+    if: "!contains(github.event.head_commit.message, 'ci skip')"
     uses: ./.github/workflows/deploy-frontend-app.yml
     needs: [deploy-api-aws-resources, deploy-frontend-aws-resources]
     with:
@@ -97,6 +103,7 @@ jobs:
       aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
   update-api-ecs-task:
+    if: "!contains(github.event.head_commit.message, 'ci skip')"
     uses: ./.github/workflows/update-ecs-task-definition.yml
     needs: [build-push-api-image, deploy-api-aws-resources, deploy-frontend-aws-resources]
     with:
