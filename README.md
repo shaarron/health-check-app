@@ -4,17 +4,12 @@
 
 This project demonstrates a CI CD flow of a simple web app, which is deployed to **AWS** using **Terraform** & **GitHub Actions**.
 
-
-
-* **
 * The Frontend was created using [V0](https://v0.dev//)
     * V0 was selected due to its UI generation capabilities - V0 is a tool that provides a full UI layouts that allow users to create React and Next.js web apps easily.
     * I used and modified the following [template](https://v0.dev/chat/community/floating-bubbles-1g1VZMvHP0o)
 * The API was created using ChatGPT
     * ChatGpt provided a simple Node.js and Express App
 
-
-* **
 ## Table of Contents
 * [Architecture](#Architecture)
     * [AWS Resources Deployed with Terraform](#aws-resources-deployed-with-terraform)
@@ -23,7 +18,6 @@ This project demonstrates a CI CD flow of a simple web app, which is deployed to
 * [Running on AWS Cloud](#running-on-aws-cloud)
 * [Running Locally - Docker Compose](#running-locally---docker-compose)
 
-* **
 ## Architecture
 ### AWS Resources Deployed with Terraform
 
@@ -67,7 +61,6 @@ health-check-app/
 └── README.md
 ```
 
-* **
 ## Running on AWS Cloud
 ### Prerequisites
 #### 1. Required Secrets for GitHub Actions
@@ -116,8 +109,6 @@ The first step is to run the **Bootstrap Terraform Backend** workflow, which ini
 Once the backend is set up, execute the **Main Workflow**, which deploys infrastructure, build images and deploys it to AWS
 
 
-
-* **
 ## Running Locally - Docker Compose
 
 This section provides the steps to set up and run the project locally using Docker Compose.
@@ -136,7 +127,6 @@ This section provides the steps to set up and run the project locally using Dock
 2. **Access the Application**  
    Once the containers are running, open your web browser and go to: http://localhost:3000
 
-* **
 
 **This project is for demonstration only**
 
