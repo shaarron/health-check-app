@@ -4,7 +4,7 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "test": "node -e \"console.log('test'); setTimeout(() => console.log('Frontend Tests Successfully Passed'), 5000)\""
+    "test": "node ./tests.js"
   },
   "keywords": [],
   "author": "",

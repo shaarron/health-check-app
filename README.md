@@ -15,7 +15,7 @@ This project demonstrates a CI CD flow of a simple web app, which is deployed to
 
 
 * **
-## Introduction
+## Table of Contents
 * [Architecture](#Architecture)
     * [AWS Resources Deployed with Terraform](#aws-resources-deployed-with-terraform)
         * [Main Workflow Diagram](#main-workflow-diagram)
@@ -39,7 +39,7 @@ The Terraform configuration provisions the following AWS resources:
 - **CloudWatch**: Enables monitoring and logging for the app.
 
 #### Main Workflow Diagram
-<img src="main-workflow.jpeg" width="300" height="auto"/>
+<img alt="" src="main-workflow.jpeg" width="300" height="auto"/>
 
 * The API is stored at GHCR, and deployed to ECS
 * The Frontend is stored at S3 bucket and is accessible only via CloudFront
