@@ -95,4 +95,4 @@ jobs:
       - name: Get CloudFront Domain URL
         working-directory: ${{ inputs.working-dir }}/terraform
         run: |
-             echo "web is available at http://$(terraform output -raw cloudfront_domain_url)"
+             echo "::notice::Web is available at http://$(terraform output -raw cloudfront_domain_url)"
