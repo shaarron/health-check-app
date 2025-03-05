@@ -40,7 +40,7 @@ jobs:
     needs: [bump-version-tag]
     with:
       working-dir: './api/src'
-      image: 'ghcr.io/${{ github.repository }}/health-check-api'
+      image: 'ghcr.io/${{ github.repository }}/api'
       tag: ${{ needs.bump-version-tag.outputs.new_tag }}
     secrets:
       github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -51,7 +51,7 @@ jobs:
     needs: [bump-version-tag]
     with:
       working-dir: './frontend/src'
-      image: 'ghcr.io/${{ github.repository }}/health-check-frontend'
+      image: 'ghcr.io/${{ github.repository }}/frontend'
       tag: ${{ needs.bump-version-tag.outputs.new_tag }}
     secrets:
       github-token: ${{ secrets.GITHUB_TOKEN }}
