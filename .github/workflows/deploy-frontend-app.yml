@@ -92,3 +92,7 @@ jobs:
             --distribution-id $DISTRIBUTION_ID \
             --paths "/*"
 
+      - name: Get CloudFront Domain URL
+        working-directory: ${{ inputs.working-dir }}/terraform
+        run: |
+             echo "web is available at http://$(terraform output -raw cloudfront_domain_url)"

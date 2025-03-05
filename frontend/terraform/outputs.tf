@@ -9,3 +9,9 @@ output "cloudfront_oac_id" {
   value       = aws_cloudfront_origin_access_control.s3_oac.id
   sensitive   = true
 }
+
+output "cloudfront_domain_url" {
+  description = "The CloudFront Domain URL"
+  value       = aws_cloudfront_distribution.s3_distribution.domain_name
+
+}
