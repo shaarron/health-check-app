@@ -31,7 +31,7 @@ on:
         type: boolean
         default: false
       requested-output:
-        description: 'request output by passing the '
+        description: 'request output by passing the required value'
         type: string
         default: ''
     secrets:
