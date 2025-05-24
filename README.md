@@ -25,7 +25,7 @@ This project demonstrates a CI CD flow of a simple web app, which is deployed to
     * [Repository Structure](#repository-structure)
 * [Running on AWS Cloud](#running-on-aws-cloud)
 * [Running Locally - Docker Compose](#running-locally---docker-compose)
-* [Related Projects](#-related-projects)
+* [Related Projects](#related-projects)
 
 ## Architecture
 ### AWS Resources Deployed with Terraform
@@ -141,7 +141,7 @@ This section provides the steps to set up and run the project locally using Dock
 
 no warranties, no guarantees. just for demonstration purposes only!
 
-### 🔗 Related Projects
+### Related Projects
 
 - [**EKS Monitoring Stack**](https://github.com/shaarron/eks-monitoring-stack): **CI/CD** Pipeline for an **Observability Stack** Deployed on **AWS EKS** using **VPC**, **Helm**, **Terraform**, **GitHub Actions**, **Route53**, **NLB** and **TLS**.
 - [**Health Check App**](https://github.com/shaarron/health-check-app): **CI/CD** Pipeline for a Web App, Deployed on **AWS**, using **ECS**, **Terraform**, **GitHub Actions**, **CloudFront**, **ALB**, **GHCR** and **Docker**.
