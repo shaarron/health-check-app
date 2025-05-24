@@ -24,7 +24,7 @@ jobs:
     outputs:
       new_tag: ${{ steps.version.outputs.new_tag }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: '0'
       - name: Bump version and push tag
