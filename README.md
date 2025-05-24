@@ -1,5 +1,13 @@
 # Health Check App
 
+🚀 **Also Explore:**  
+
+Check out my **New Advanced Project** [EKS Monitoring Stack](https://github.com/shaarron/eks-monitoring-stack)  
+
+Using AWS **EKS**, **VPC** **Helm**, **Terraform**, **GitHub Actions**, **Route53**, **NLB**, **TLS**, monitoring stack.
+
+[![Explore EKS Stack](https://img.shields.io/badge/See-EKS_Monitoring_Stack-brightgreen)](https://github.com/shaarron/eks-monitoring-stack)
+
 ## Overview
 
 This project demonstrates a CI CD flow of a simple web app, which is deployed to **AWS** using **Terraform** & **GitHub Actions**.
@@ -17,6 +25,7 @@ This project demonstrates a CI CD flow of a simple web app, which is deployed to
     * [Repository Structure](#repository-structure)
 * [Running on AWS Cloud](#running-on-aws-cloud)
 * [Running Locally - Docker Compose](#running-locally---docker-compose)
+* [Related Projects](#-related-projects)
 
 ## Architecture
 ### AWS Resources Deployed with Terraform
@@ -131,3 +140,9 @@ This section provides the steps to set up and run the project locally using Dock
 **This project is for demonstration only**
 
 no warranties, no guarantees. just for demonstration purposes only!
+
+### 🔗 Related Projects
+
+- [**EKS Monitoring Stack**](https://github.com/shaarron/eks-monitoring-stack): **CI/CD** Pipeline for an **Observability Stack** Deployed on **AWS EKS** using **VPC**, **Helm**, **Terraform**, **GitHub Actions**, **Route53**, **NLB** and **TLS**.
+- [**Health Check App**](https://github.com/shaarron/health-check-app): **CI/CD** Pipeline for a Web App, Deployed on **AWS**, using **ECS**, **Terraform**, **GitHub Actions**, **CloudFront**, **ALB**, **GHCR** and **Docker**.
+- [**Fullstack QA Automation**](https://github.com/shaarron/fullstack-qa-automation): **Python** full-stack QA framework covering UI & API tests with **Pytest**, **Selenium**, **Allure** reports & **Requests**, structured via **Page Object Model**.
