@@ -98,10 +98,10 @@ jobs:
         env:
           aws-region: ${{ inputs.aws-region }}
         run: |
-          if [ "${{ inputs.use-lock }}" = "true" ]; then
-            terraform plan -out=tfplan
-          else
+          if [ "${{ inputs.force-unlock }}" = "true" ]; then
             terraform plan -out=tfplan -lock=false
+          else
+            terraform plan -out=tfplan 
           fi
 
       - name: Apply Terraform Configuration

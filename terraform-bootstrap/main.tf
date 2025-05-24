@@ -1,11 +1,3 @@
-variable "terraform-backend-bucket" {
-  type = string
-}
-
-variable "aws-region" {
-  type = string
-}
-
 provider "aws" {
   region = var.aws-region
 }
